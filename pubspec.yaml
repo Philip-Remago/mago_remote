@@ -1,0 +1,42 @@
+name: mago_remote
+description: >-
+  Remote-desktop Flutter plugin. Exposes ControllerSession + RemoteVideoView
+  for controller apps and HostSession for host apps. Android Kotlin services
+  (AccessibilityService, ScreenCaptureService) ship inside the plugin and are
+  auto-merged by Gradle into the consuming application.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ">=3.9.0 <4.0.0"
+  flutter: ">=3.35.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  livekit_client: ^2.4.0
+  http: ^1.2.0
+  permission_handler: ^11.3.0
+  flutter_background: ^1.3.0
+  ffi: ^2.1.0
+  win32: ^5.5.0
+  # flutter_webrtc is a direct transitive of livekit_client; we pin it
+  # here so that HostSession can use Helper.requestCapturePermission() and
+  # desktopCapturer.getSources() without relying on transitive resolution.
+  flutter_webrtc: ">=0.9.0 <2.0.0"
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  fake_async: ^1.3.1
+  flutter_lints: ^6.0.0
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: com.magoremote.mago_remote
+        pluginClass: MagoRemotePlugin
+      # macOS and Windows use pure Dart FFI — no native plugin surface needed.
+      # iOS and Linux are controller-only (no hosting) and also pure Dart.

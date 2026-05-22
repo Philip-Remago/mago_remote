@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Required for screen sharing foreground service. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
+    <!-- Required for vibrate feedback during gesture injection. -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+
+    <application>
+        <!--
+          AccessibilityService that performs tap/text/gesture injection on the
+          host device. The consuming app must prompt the user to enable it via
+          Settings.ACTION_ACCESSIBILITY_SETTINGS.
+        -->
+        <service
+            android:name=".RemoteInputService"
+            android:exported="true"
+            android:label="@string/accessibility_service_label"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_service_config" />
+        </service>
+
+        <!--
+          Foreground service required by Android 10+ for MediaProjection.
+          Must be started AFTER Helper.requestCapturePermission() has returned
+          true so the system has granted the project_media token.
+        -->
+        <service
+            android:name=".ScreenCaptureService"
+            android:exported="false"
+            android:foregroundServiceType="mediaProjection" />
+    </application>
+</manifest>
