@@ -477,10 +477,13 @@ class _RemoteVideoViewState extends State<RemoteVideoView> {
         final currentMid = Offset((p0.dx + p1.dx) / 2, (p0.dy + p1.dy) / 2);
         final newScale = (_pinchStartScale! * currentDist / _pinchStartDist!)
             .clamp(1.0, widget.maxZoom);
-        final newPan = _clampPan(
-          _pinchStartPan! + (currentMid - _pinchStartMid!),
-          rect,
-        );
+        final center = rect.center;
+        final scaleRatio = newScale / _pinchStartScale!;
+        final focalPan =
+            currentMid -
+            center -
+            (_pinchStartMid! - _pinchStartPan! - center) * scaleRatio;
+        final newPan = _clampPan(focalPan, rect);
         setState(() {
           _zoomScale = newScale;
           _panOffset = newPan;
