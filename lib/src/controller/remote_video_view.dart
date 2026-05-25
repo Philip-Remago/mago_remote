@@ -639,25 +639,6 @@ class _RemoteVideoViewState extends State<RemoteVideoView> {
                       ),
                     ),
                   ),
-                if (widget.showResetZoomButton &&
-                    video != null &&
-                    _zoomScale > 1.0)
-                  Positioned(
-                    top: videoRect.top + 8,
-                    right: fullSize.width - videoRect.right + 8,
-                    child: Material(
-                      color: Colors.black54,
-                      borderRadius: BorderRadius.circular(20),
-                      child: IconButton(
-                        icon: const Icon(
-                          Icons.zoom_out_map,
-                          color: Colors.white,
-                        ),
-                        tooltip: 'Reset zoom',
-                        onPressed: _resetZoom,
-                      ),
-                    ),
-                  ),
               ],
             ),
           ),
