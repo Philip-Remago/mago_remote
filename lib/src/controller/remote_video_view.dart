@@ -415,7 +415,7 @@ class _RemoteVideoViewState extends State<RemoteVideoView> {
     _send(proto.MouseMoveEvent(x: n.dx, y: n.dy), reliable: false);
   }
 
-  void _onPointerDown(PointerDownEvent e, Rect rect, EdgeInsets gi) {
+  void _onPointerDown(PointerDownEvent e, Rect rect) {
     _activePointers[e.pointer] = e.localPosition;
 
     if (_activePointers.length >= 2) {
@@ -451,8 +451,9 @@ class _RemoteVideoViewState extends State<RemoteVideoView> {
       }
     }
 
-    if (!_isInsideActiveArea(e.localPosition, rect, gi)) return;
-    final n = _toHostZoomed(e.localPosition, rect, strict: true);
+    // Clamp to video bounds (same as move/up) so taps in letterbox bars
+    // reach the nearest edge of the remote screen rather than being dropped.
+    final n = _toHostZoomed(e.localPosition, rect);
     if (n == null) return;
     _gestures.onPointerDown(
       event: e,
@@ -589,7 +590,7 @@ class _RemoteVideoViewState extends State<RemoteVideoView> {
           child: Listener(
             behavior: HitTestBehavior.translucent,
             onPointerHover: (e) => _onHover(e, videoRect, gi),
-            onPointerDown: (e) => _onPointerDown(e, videoRect, gi),
+            onPointerDown: (e) => _onPointerDown(e, videoRect),
             onPointerMove: (e) => _onPointerMove(e, videoRect, gi),
             onPointerUp: (e) => _onPointerUp(e, videoRect, gi),
             onPointerCancel: _onPointerCancel,
