@@ -69,9 +69,11 @@ class HostSession {
   // ---- State streams ----
   final _stateCtl = StreamController<HostState>.broadcast();
   final _displaysCtl = StreamController<List<DisplayInfo>>.broadcast();
+  final _allParticipantsLeft = StreamController<void>.broadcast();
 
   Stream<HostState> get stateStream => _stateCtl.stream;
   Stream<List<DisplayInfo>> get displaysStream => _displaysCtl.stream;
+  Stream<void> get onAllParticipantsLeft => _allParticipantsLeft.stream;
 
   // ---- Current-value accessors ----
   HostState _state = HostState.idle;
@@ -139,6 +141,7 @@ class HostSession {
           try {
             await _stopCapturing();
           } catch (_) {}
+          if (!_allParticipantsLeft.isClosed) _allParticipantsLeft.add(null);
         }
       });
 
@@ -358,6 +361,7 @@ class HostSession {
     _focusWatcher.dispose();
     if (!_stateCtl.isClosed) await _stateCtl.close();
     if (!_displaysCtl.isClosed) await _displaysCtl.close();
+    if (!_allParticipantsLeft.isClosed) await _allParticipantsLeft.close();
   }
 
   // ---- Private ----
