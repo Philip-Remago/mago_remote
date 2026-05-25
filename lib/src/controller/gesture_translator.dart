@@ -98,6 +98,22 @@ class GestureTranslator {
     _pinch = null;
   }
 
+  void cancelAll() {
+    final keys = List<int>.from(_pointers.keys);
+    for (final pointer in keys) {
+      _completePointer(
+        pointer: pointer,
+        buttons: 0,
+        hostPoint: null,
+        cancel: true,
+      );
+    }
+    _wheel?.idleTimer.cancel();
+    _wheel = null;
+    _pinch?.idleTimer.cancel();
+    _pinch = null;
+  }
+
   // ------------------------------------------------------------ pointer in
   void onPointerDown({
     required PointerDownEvent event,

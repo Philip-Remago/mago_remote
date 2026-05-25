@@ -420,7 +420,7 @@ class _RemoteVideoViewState extends State<RemoteVideoView> {
 
     if (_activePointers.length >= 2) {
       if (_activePointers.length == 2) {
-        _gestures.reset();
+        _gestures.cancelAll();
         final positions = _activePointers.values.toList();
         final dx = positions[1].dx - positions[0].dx;
         final dy = positions[1].dy - positions[0].dy;
