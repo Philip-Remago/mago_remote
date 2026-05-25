@@ -112,7 +112,7 @@ class RemoteVideoView extends StatefulWidget {
     required this.session,
     this.controller,
     this.backgroundColor = Colors.black,
-    this.showBorder = true,
+    this.showBorder = false,
     this.showResetZoomButton = true,
     this.maxZoom = 5.0,
   });
