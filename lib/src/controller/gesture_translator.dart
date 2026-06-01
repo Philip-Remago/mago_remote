@@ -85,6 +85,17 @@ class GestureTranslator {
   _WheelGesture? _wheel;
   _PinchGesture? _pinch;
 
+  // Double-tap tracking for touchEmulatesMouse.
+  DateTime? _lastTapTime;
+  Offset? _lastTapNorm;
+
+  /// Max time between two taps to qualify as a double-click (ms).
+  static const int _kDoubleTapMs = 400;
+
+  /// Max distance (normalized, squared) between two taps to qualify.
+  /// 0.02 ≈ 20 px on a 1000 px-wide screen.
+  static const double _kDoubleTapDistSq = 0.02 * 0.02;
+
   /// Drop all in-flight gestures. Call when the session disconnects so
   /// pointers don't get stuck on the host.
   void reset() {
@@ -96,6 +107,8 @@ class GestureTranslator {
     _wheel = null;
     _pinch?.idleTimer.cancel();
     _pinch = null;
+    _lastTapTime = null;
+    _lastTapNorm = null;
   }
 
   void cancelAll() {
@@ -112,6 +125,8 @@ class GestureTranslator {
     _wheel = null;
     _pinch?.idleTimer.cancel();
     _pinch = null;
+    _lastTapTime = null;
+    _lastTapNorm = null;
   }
 
   // ------------------------------------------------------------ pointer in
@@ -388,24 +403,56 @@ class GestureTranslator {
               y: lift.dy,
             ),
           );
+          _lastTapTime = null;
+          _lastTapNorm = null;
         } else if (!cancel) {
-          // Quick tap → click pair.
-          send(
-            proto.MouseButtonEvent(
-              button: proto.MouseButton.left,
-              down: true,
-              x: st.startNorm.dx,
-              y: st.startNorm.dy,
-            ),
-          );
-          send(
-            proto.MouseButtonEvent(
-              button: proto.MouseButton.left,
-              down: false,
-              x: st.startNorm.dx,
-              y: st.startNorm.dy,
-            ),
-          );
+          final now = DateTime.now();
+          final prev = _lastTapTime;
+          final prevPos = _lastTapNorm;
+          final dx = st.startNorm.dx - (prevPos?.dx ?? 0);
+          final dy = st.startNorm.dy - (prevPos?.dy ?? 0);
+          final isDoubleTap =
+              prev != null &&
+              prevPos != null &&
+              now.difference(prev).inMilliseconds < _kDoubleTapMs &&
+              (dx * dx + dy * dy) < _kDoubleTapDistSq;
+
+          if (isDoubleTap) {
+            // Send all four events in one burst so they arrive at the host
+            // within milliseconds — guarantees Windows registers a double-click
+            // regardless of network latency between individual taps.
+            _lastTapTime = null;
+            _lastTapNorm = null;
+            for (final down in [true, false, true, false]) {
+              send(
+                proto.MouseButtonEvent(
+                  button: proto.MouseButton.left,
+                  down: down,
+                  x: st.startNorm.dx,
+                  y: st.startNorm.dy,
+                ),
+              );
+            }
+          } else {
+            _lastTapTime = now;
+            _lastTapNorm = st.startNorm;
+            send(
+              proto.MouseButtonEvent(
+                button: proto.MouseButton.left,
+                down: true,
+                x: st.startNorm.dx,
+                y: st.startNorm.dy,
+              ),
+            );
+            send(
+              proto.MouseButtonEvent(
+                button: proto.MouseButton.left,
+                down: false,
+                x: st.startNorm.dx,
+                y: st.startNorm.dy,
+              ),
+            );
+          }
         }
         return;
       case _Flavor.mouseSingleFinger:
