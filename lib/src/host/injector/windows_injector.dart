@@ -12,10 +12,14 @@ import 'key_mapping.dart';
 // Win32 mouse-wheel notch value.
 const int _kWheelDelta = 120;
 
+const int _kDedupMs = 30;
+
 /// Windows host injector using the Win32 SendInput API via the `win32`
 /// package (no hand-rolled FFI needed).
 class WindowsInjector implements InputInjector {
   DisplayInfo? _target;
+
+  final Map<String, DateTime> _lastSeen = {};
 
   @override
   Future<bool> isReady() async => Platform.isWindows;
@@ -43,11 +47,22 @@ class WindowsInjector implements InputInjector {
     return ScreenInfoEvent(width: w, height: h, scale: 1.0);
   }
 
+  bool _dedup(String key) {
+    final now = DateTime.now();
+    final last = _lastSeen[key];
+    if (last != null && now.difference(last).inMilliseconds < _kDedupMs) {
+      return true;
+    }
+    _lastSeen[key] = now;
+    return false;
+  }
+
   @override
   Future<void> handle(InputEvent event) async {
     if (event is MouseMoveEvent) {
       _sendMouseAbsolute(event.x, event.y, MOUSEEVENTF_MOVE);
     } else if (event is MouseButtonEvent) {
+      if (_dedup('m_${event.button.index}_${event.down ? 1 : 0}')) return;
       final flag = _mouseButtonFlag(event.button, event.down);
       _sendMouseAbsolute(event.x, event.y, MOUSEEVENTF_MOVE | flag);
     } else if (event is MouseWheelEvent) {
@@ -58,6 +73,7 @@ class WindowsInjector implements InputInjector {
         _sendWheel(event.dx.round(), horizontal: true);
       }
     } else if (event is KeyInputEvent) {
+      if (_dedup('k_${event.physicalKey}_${event.down ? 1 : 0}')) return;
       _sendKey(event);
     } else if (event is TextEvent) {
       _sendText(event.text);

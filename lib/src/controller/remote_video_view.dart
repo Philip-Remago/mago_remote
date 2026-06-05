@@ -389,20 +389,6 @@ class _RemoteVideoViewState extends State<RemoteVideoView> {
         capsLock: capsLock,
       ),
     );
-    // Also forward text character for non-control keys on key-down.
-    if (isDown &&
-        evt.character != null &&
-        evt.character!.isNotEmpty &&
-        (mods &
-                (proto.KeyMods.ctrl |
-                    proto.KeyMods.meta |
-                    proto.KeyMods.alt)) ==
-            0) {
-      final code = evt.character!.codeUnitAt(0);
-      if (code >= 0x20 && code != 0x7f) {
-        _send(proto.TextEvent(text: evt.character!));
-      }
-    }
     return KeyEventResult.handled;
   }
 
