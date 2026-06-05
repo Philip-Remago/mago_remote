@@ -19,6 +19,8 @@ const int _kDedupMs = 30;
 class WindowsInjector implements InputInjector {
   DisplayInfo? _target;
 
+  void Function(String)? logger;
+
   final Map<String, DateTime> _lastSeen = {};
 
   @override
@@ -47,11 +49,15 @@ class WindowsInjector implements InputInjector {
     return ScreenInfoEvent(width: w, height: h, scale: 1.0);
   }
 
-  bool _dedup(String key) {
+  bool _dedup(String key, String label) {
     final now = DateTime.now();
     final last = _lastSeen[key];
-    if (last != null && now.difference(last).inMilliseconds < _kDedupMs) {
-      return true;
+    if (last != null) {
+      final deltaMs = now.difference(last).inMilliseconds;
+      if (deltaMs < _kDedupMs) {
+        logger?.call('[Injector] DEDUP $label (delta ${deltaMs}ms) — dropped');
+        return true;
+      }
     }
     _lastSeen[key] = now;
     return false;
@@ -62,7 +68,10 @@ class WindowsInjector implements InputInjector {
     if (event is MouseMoveEvent) {
       _sendMouseAbsolute(event.x, event.y, MOUSEEVENTF_MOVE);
     } else if (event is MouseButtonEvent) {
-      if (_dedup('m_${event.button.index}_${event.down ? 1 : 0}')) return;
+      final label = 'mouse ${event.button.name} down=${event.down}';
+      logger?.call('[Injector] $label');
+      if (_dedup('m_${event.button.index}_${event.down ? 1 : 0}', label))
+        return;
       final flag = _mouseButtonFlag(event.button, event.down);
       _sendMouseAbsolute(event.x, event.y, MOUSEEVENTF_MOVE | flag);
     } else if (event is MouseWheelEvent) {
@@ -73,9 +82,13 @@ class WindowsInjector implements InputInjector {
         _sendWheel(event.dx.round(), horizontal: true);
       }
     } else if (event is KeyInputEvent) {
-      if (_dedup('k_${event.physicalKey}_${event.down ? 1 : 0}')) return;
+      final label =
+          'key physicalKey=0x${event.physicalKey.toRadixString(16)} down=${event.down}';
+      logger?.call('[Injector] $label');
+      if (_dedup('k_${event.physicalKey}_${event.down ? 1 : 0}', label)) return;
       _sendKey(event);
     } else if (event is TextEvent) {
+      logger?.call('[Injector] text "${event.text}"');
       _sendText(event.text);
     }
   }

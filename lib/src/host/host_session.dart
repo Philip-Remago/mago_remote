@@ -13,6 +13,7 @@ import '../protocol/input_event.dart';
 import 'display_info.dart';
 import 'focus_watcher.dart';
 import 'injector/input_injector.dart';
+import 'injector/windows_injector.dart';
 import 'screen_enumerator.dart';
 
 /// Lifecycle state of a [HostSession].
@@ -29,11 +30,17 @@ enum HostState { idle, starting, connected, error }
 ///
 /// All streams are broadcast streams — multiple listeners are safe.
 class HostSession {
+  static void Function(String)? onLog;
+
   HostSession()
     : _roomSession = RoomSession(),
       _injector = InputInjector.forCurrentPlatform(),
       _focusWatcher = FocusWatcher.forCurrentPlatform(),
-      pairingCode = _generateCode();
+      pairingCode = _generateCode() {
+    if (_injector is WindowsInjector) {
+      _injector.logger = (msg) => HostSession.onLog?.call(msg);
+    }
+  }
 
   final RoomSession _roomSession;
   final InputInjector _injector;
@@ -370,11 +377,11 @@ class HostSession {
     final event = InputEvent.decode(ev.data);
     if (event == null) return;
     if (event is SwitchDisplayEvent) {
-      // Controller requested a monitor swap; ignore failures and let
-      // the next DisplaysInfoEvent (or its absence) be the source of
-      // truth on the controller side.
       switchSource(event.sourceId).catchError((_) {});
       return;
+    }
+    if (event is! MouseMoveEvent) {
+      onLog?.call('[HostSession] received ${event.runtimeType}');
     }
     _injector.handle(event);
   }
