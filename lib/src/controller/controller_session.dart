@@ -112,6 +112,20 @@ class ControllerSession {
 
       _listener = _roomSession.room.createListener();
 
+      _listener!.on<RoomDisconnectedEvent>((e) {
+        _currentVideoTrack = null;
+        _videoTrackCtl.add(null);
+        _setState(ControllerState.disconnected);
+      });
+
+      _listener!.on<RoomReconnectingEvent>((_) {
+        _setState(ControllerState.connecting);
+      });
+
+      _listener!.on<RoomReconnectedEvent>((_) {
+        _setState(ControllerState.connected);
+      });
+
       _listener!.on<TrackSubscribedEvent>((e) {
         if (e.track is VideoTrack) {
           _currentVideoTrack = e.track as VideoTrack;
@@ -123,6 +137,7 @@ class ControllerSession {
         if (e.track is VideoTrack && e.track == _currentVideoTrack) {
           _currentVideoTrack = null;
           _videoTrackCtl.add(null);
+          _setState(ControllerState.disconnected);
         }
       });
 
