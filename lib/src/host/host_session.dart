@@ -116,7 +116,14 @@ class HostSession {
     required String token,
     String? sourceId,
   }) async {
-    if (_state == HostState.starting || _state == HostState.connected) return;
+    onLog?.call(
+      '[HostSession] start() called: state=$_state url=$liveKitUrl '
+      'tokenLen=${token.length} sourceId=$sourceId',
+    );
+    if (_state == HostState.starting || _state == HostState.connected) {
+      onLog?.call('[HostSession] start() ignored: already $_state');
+      return;
+    }
     _setState(HostState.starting);
     try {
       // (No microphone permission needed — the host never publishes audio,
@@ -125,7 +132,9 @@ class HostSession {
         await _ensureMacScreenRecordingPermission();
       }
 
+      onLog?.call('[HostSession] connecting to room...');
       await _roomSession.connect(url: liveKitUrl, token: token);
+      onLog?.call('[HostSession] room connected');
 
       _listener = _roomSession.room.createListener();
       _listener!.on<DataReceivedEvent>(_onData);
@@ -239,7 +248,9 @@ class HostSession {
       });
 
       _setState(HostState.connected);
-    } catch (e) {
+      onLog?.call('[HostSession] start() complete: connected');
+    } catch (e, st) {
+      onLog?.call('[HostSession] start() failed: $e\n$st');
       if (Platform.isAndroid) {
         try {
           await _androidChannel.invokeMethod('stopScreenCaptureService');
