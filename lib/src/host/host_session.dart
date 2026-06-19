@@ -19,6 +19,18 @@ import 'screen_enumerator.dart';
 /// Lifecycle state of a [HostSession].
 enum HostState { idle, starting, connected, error }
 
+/// Target screen-share encode parameters: 936p (16:9) @ 60fps, 10 Mbps cap.
+/// Bitrate/framerate here mirror the RTP `screenShareEncoding` in
+/// [RoomSession]; the dimensions drive what the desktop capturer scales to.
+const _screenShareParams = VideoParameters(
+  description: 'screenShare936FPS60',
+  dimensions: VideoDimensions(1664, 936),
+  encoding: VideoEncoding(
+    maxBitrate: 10 * 1000 * 1000,
+    maxFramerate: 60,
+  ),
+);
+
 /// Pure-logic session object for the host (screen-sharing) role.
 ///
 /// The consuming app is responsible for:
@@ -197,8 +209,8 @@ class HostSession {
 
         screenOpts = ScreenShareCaptureOptions(
           sourceId: pickedSource.id,
-          maxFrameRate: 30,
-          params: VideoParametersPresets.screenShareH720FPS15,
+          maxFrameRate: 60,
+          params: _screenShareParams,
         );
       }
 
@@ -353,8 +365,8 @@ class HostSession {
       true,
       screenShareCaptureOptions: ScreenShareCaptureOptions(
         sourceId: source.id,
-        maxFrameRate: 30,
-        params: VideoParametersPresets.screenShareH720FPS15,
+        maxFrameRate: 60,
+        params: _screenShareParams,
       ),
     );
 

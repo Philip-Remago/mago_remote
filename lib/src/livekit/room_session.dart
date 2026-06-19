@@ -18,12 +18,12 @@ class RoomSession {
         adaptiveStream: false,
         dynacast: false,
         defaultVideoPublishOptions: VideoPublishOptions(
-          videoCodec: 'vp8',
+          videoCodec: 'h265',
           simulcast: false,
           degradationPreference: DegradationPreference.maintainResolution,
           screenShareEncoding: VideoEncoding(
-            maxBitrate: 3 * 1000 * 1000,
-            maxFramerate: 30,
+            maxBitrate: 10 * 1000 * 1000,
+            maxFramerate: 60,
           ),
         ),
       ),
